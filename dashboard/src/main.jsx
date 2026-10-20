@@ -28,9 +28,11 @@ function setLineGeometry(line, points, fallback = [new THREE.Vector3(), new THRE
   line.geometry = new THREE.BufferGeometry().setFromPoints(points.length > 1 ? points : fallback)
 }
 
-function RobotScene({ state, mapData }) {
+function RobotScene({ state, mapData, onGoal }) {
   const mount = useRef(null)
   const sceneRef = useRef(null)
+  const onGoalRef = useRef(onGoal)
+  onGoalRef.current = onGoal
 
   useEffect(() => {
     const element = mount.current
@@ -69,20 +71,31 @@ function RobotScene({ state, mapData }) {
     const mapPath = new THREE.Line(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#f1c95b', transparent: true, opacity: 0.95 }))
     const boundary = new THREE.LineLoop(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: '#d26bff', transparent: true, opacity: 0.85 }))
     const cloud = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ color: '#8be9ff', size: 0.035, sizeAttenuation: true, transparent: true, opacity: 0.8 }))
-    scene.add(frustum, trail, mapPath, boundary, cloud)
+    const goalMarker = new THREE.Mesh(new THREE.RingGeometry(0.12, 0.16, 24), new THREE.MeshBasicMaterial({ color: '#ffcf5b', side: THREE.DoubleSide, transparent: true, opacity: 0.95 }))
+    goalMarker.rotation.x = -Math.PI / 2; goalMarker.position.y = 0.035; goalMarker.visible = false
+    scene.add(frustum, trail, mapPath, boundary, cloud, goalMarker)
 
     const orbit = { yaw: 0.65, pitch: 0.62, distance: 5.2, dragging: false, lastX: 0, lastY: 0, keys: {} }
     const resize = () => {
       const width = element.clientWidth || 1; const height = element.clientHeight || 1
       camera.aspect = width / height; camera.updateProjectionMatrix(); renderer.setSize(width, height, false)
     }
-    const pointerDown = event => { orbit.dragging = true; orbit.lastX = event.clientX; orbit.lastY = event.clientY; element.setPointerCapture(event.pointerId) }
+    const pointerDown = event => { orbit.dragging = true; orbit.moved = false; orbit.lastX = event.clientX; orbit.lastY = event.clientY; orbit.downX = event.clientX; orbit.downY = event.clientY; element.setPointerCapture(event.pointerId) }
     const pointerMove = event => {
       if (!orbit.dragging) return
+      if (Math.hypot(event.clientX - orbit.downX, event.clientY - orbit.downY) > 5) orbit.moved = true
       orbit.yaw -= (event.clientX - orbit.lastX) * 0.008; orbit.pitch += (event.clientY - orbit.lastY) * 0.006
       orbit.pitch = Math.max(0.2, Math.min(1.35, orbit.pitch)); orbit.lastX = event.clientX; orbit.lastY = event.clientY
     }
-    const pointerUp = () => { orbit.dragging = false }
+    const pointerUp = event => {
+      if (orbit.dragging && !orbit.moved) {
+        const rect = element.getBoundingClientRect(); const mouse = new THREE.Vector2(((event.clientX - rect.left) / rect.width) * 2 - 1, -((event.clientY - rect.top) / rect.height) * 2 + 1)
+        const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, camera)
+        const hit = raycaster.intersectObject(floor, false)[0]
+        if (hit && onGoalRef.current) onGoalRef.current([hit.point.x, -hit.point.z])
+      }
+      orbit.dragging = false
+    }
     const wheel = event => { event.preventDefault(); orbit.distance = Math.max(2.0, Math.min(15, orbit.distance + event.deltaY * 0.006)) }
     const keyDown = event => { if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) { orbit.keys[event.key] = true; event.preventDefault() } }
     const keyUp = event => { delete orbit.keys[event.key] }
@@ -102,7 +115,7 @@ function RobotScene({ state, mapData }) {
       const desired = new THREE.Vector3(target.x + Math.sin(orbit.yaw) * horizontal, target.y + Math.sin(orbit.pitch) * orbit.distance, target.z + Math.cos(orbit.yaw) * horizontal)
       camera.position.lerp(desired, 0.12); camera.lookAt(target); renderer.render(scene, camera)
     }
-    sceneRef.current = { camera, renderer, robot, frustum, trail, mapPath, boundary, cloud, followTarget: new THREE.Vector3() }
+    sceneRef.current = { camera, renderer, robot, frustum, trail, mapPath, boundary, cloud, goalMarker, followTarget: new THREE.Vector3() }
     render()
     return () => {
       cancelAnimationFrame(animation); observer.disconnect(); renderer.dispose()
@@ -115,7 +128,7 @@ function RobotScene({ state, mapData }) {
   useEffect(() => {
     const current = sceneRef.current
     if (!current) return
-    const { robot, frustum, trail, mapPath, boundary, cloud } = current
+    const { robot, frustum, trail, mapPath, boundary, cloud, goalMarker } = current
     const [x, y, heading] = state.pose || [0, 0, 0]
     robot.position.set(x, 0, -y); robot.rotation.y = -heading
     const target = new THREE.Vector3(x, 0, -y); current.followTarget = target
@@ -135,6 +148,7 @@ function RobotScene({ state, mapData }) {
     cloud.geometry.dispose(); cloud.geometry = new THREE.BufferGeometry(); cloud.geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     const near = new THREE.Vector3(x, 0.34, -y); const forward = new THREE.Vector3(Math.sin(heading), 0, -Math.cos(heading)); const side = new THREE.Vector3(Math.cos(heading), 0, Math.sin(heading)); const farCenter = near.clone().addScaledVector(forward, 1.3); const left = farCenter.clone().addScaledVector(side, 0.55); const right = farCenter.clone().addScaledVector(side, -0.55)
     setLineGeometry(frustum, [near, left, near, right, left, right])
+    if (state.goal && state.goal.length === 2) { goalMarker.position.set(state.goal[0], 0.035, -state.goal[1]); goalMarker.visible = true } else goalMarker.visible = false
   }, [state, mapData])
 
   return <div className="scene" ref={mount} aria-label="Interactive Three.js third-person SLAM map" />
@@ -185,12 +199,13 @@ function App() {
   const setController = async mode => { try { const response = await fetch('/api/controller', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode }) }); if (!response.ok) { const body = await response.json(); throw new Error(body.error || 'CONTROLLER SWITCH FAILED') } } catch (e) { setError(e.message) } }
   const [x, y, heading] = state.pose || [0, 0, 0]
   const mapStats = state.map || {}
-  return <main className="game-shell"><div className="viewport"><RobotScene state={state} mapData={mapData} /><div className="crosshair" />
+  const setGoal = async point => { try { const response = await fetch('/api/goal', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ point }) }); if (!response.ok) throw new Error('GOAL COMMAND FAILED') } catch (e) { setError(e.message) } }
+  return <main className="game-shell"><div className="viewport"><RobotScene state={state} mapData={mapData} onGoal={setGoal} /><div className="crosshair" />
     <header className="hud hud-top"><div><span className="brand">JETBOT // NAVIGATION LAB</span><span className="scene-title">THIRD-PERSON SLAM VIEW</span></div><div className={`connection ${error ? 'offline' : ''}`}><span className="status-dot" />{error || (state.mode === 'hardware' ? 'JETBOT ONLINE' : 'SIMULATION')}</div></header>
     <div className="hud hud-camera"><CameraPanel available={state.camera?.available} /></div>
     <div className="hud hud-left"><div className="readout"><span>POSE</span><b>{fmt(x)} / {fmt(y)} m</b><b>{fmt(heading * 180 / Math.PI, 1)}°</b></div><div className="readout"><span>SLAM MAP</span><b>{mapStats.points || mapData.points?.length || 0} POINTS</b><b>{mapStats.boundary || mapData.boundary?.length || 0} BOUNDARY NODES</b><small>{mapStats.source || mapData.source || 'NO MAP'}</small></div><div className="readout"><span>SYSTEM</span><b>{state.cpu_temp_c == null ? '—' : `${fmt(state.cpu_temp_c, 1)}°C`} · {state.memory_percent == null ? '—' : `${fmt(state.memory_percent, 0)}% RAM`}</b></div></div>
     <div className="hud hud-right"><ControllerPanel state={state} onChange={setController} /><MotorControl mode={state.controller_mode} onMotor={sendMotor} onCmdVel={sendCmdVel} onStop={stop} /></div>
-    <div className="hud hud-bottom"><span>MAP: {mapData.source || 'waiting for SLAM telemetry'}</span><span>POINT CLOUD {mapData.points?.length || 0}</span><span>POSE SOURCE: {state.pose_source || 'wheel dead-reckoning'}</span></div>
+    <div className="hud hud-bottom"><span>CLICK GROUND: SET GOAL</span><span>MAP: {mapData.source || 'waiting for SLAM telemetry'}</span><span>POINT CLOUD {mapData.points?.length || 0}</span><span>POSE SOURCE: {state.pose_source || 'wheel dead-reckoning'}</span></div>
   </div></main>
 }
 

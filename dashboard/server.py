@@ -71,6 +71,7 @@ class RobotRuntime:
         self.rl_policy = None
         self.rl_error = ""
         self.map_data = {"points": [], "boundary": [], "path": [], "bounds": None, "source": "none", "updated_at": None}
+        self.goal = None
         self.robot = None
         self.camera = None
         self.camera_error = ""
@@ -146,6 +147,15 @@ class RobotRuntime:
     def map_state(self):
         with self.lock:
             return dict(self.map_data)
+
+    def set_goal(self, point):
+        if not isinstance(point, (list, tuple)) or len(point) != 2:
+            raise ValueError("goal must contain x and y")
+        values = [float(v) for v in point]
+        if not all(math.isfinite(v) for v in values):
+            raise ValueError("goal must contain finite values")
+        with self.lock:
+            self.goal = values
 
     @property
     def hardware(self):
@@ -251,6 +261,7 @@ class RobotRuntime:
                 "status": "Ready" if self.hardware else "Waiting for JetBot hardware",
                 "pose": list(self.pose),
                 "path": [],
+                "goal": list(self.goal) if self.goal is not None else None,
                 "map": {
                     "points": len(self.map_data["points"]),
                     "boundary": len(self.map_data["boundary"]),
@@ -373,6 +384,12 @@ class Handler(BaseHTTPRequestHandler):
                 runtime.set_pose(body["pose"]); self.json({"ok": True})
             elif self.path == "/api/map":
                 runtime.set_map(body); self.json({"ok": True, "points": len(runtime.map_data["points"])})
+            elif self.path == "/api/goal":
+                goal = body["point"] if "point" in body else [body["x"], body["y"]]
+                runtime.set_goal(goal)
+                self.json({"ok": True, "goal": runtime.goal, "planner": "goal stored; navigation bridge not active"})
+            elif self.path == "/api/goal/clear":
+                runtime.goal = None; self.json({"ok": True})
             else:
                 self.json({"error": "unknown endpoint"}, HTTPStatus.NOT_FOUND)
         except (KeyError, TypeError, ValueError, json.JSONDecodeError) as exc:

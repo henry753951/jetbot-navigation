@@ -24,6 +24,8 @@ The dashboard is intentionally a separate service. A SLAM process can publish `[
 
 The map is written to the mounted `data/slam_map.json` volume, so a dashboard restart does not erase the last visualization. The Nano image includes the trained NumPy wheel policy, but its measured velocity is estimated from motor commands because the standard JetBot has no wheel encoders. A real vSLAM process still needs a calibrated camera and must publish poses to these endpoints; until then, the service shows wheel dead-reckoning and an empty map layer.
 
+Clicking the ground in the 3D view sends `POST /api/goal` and leaves a goal marker in the scene. It is currently a goal-selection bridge; the actual planner/controller must be connected before it is allowed to drive toward that marker.
+
 To load the versioned Isaac Sim fake-room occupancy layer again:
 
 ```bash
