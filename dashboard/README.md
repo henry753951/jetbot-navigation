@@ -2,14 +2,27 @@
 
 This folder contains the React + Three.js development dashboard and the small Python service that runs beside the JetBot camera and motors.
 
-The page has four useful pieces:
+The page is a fullscreen game-like view:
 
-- a live MJPEG camera panel;
-- a Three.js third-person scene that follows the current pose;
-- state cards for pose, temperature, memory, and uptime;
-- hold-to-drive controls with a one-second motor timeout and a stop button.
+- drag the scene to orbit the third-person camera and use the wheel to zoom;
+- an in-scene SLAM point cloud, boundary, recorded path, camera frustum, and robot;
+- a small live camera window and HUD readouts;
+- hold-to-drive controls with a one-second motor timeout and a stop button;
+- a manual/RL controller switch. RL mode loads the trained CEM wheel policy and
+  accepts velocity commands through `POST /api/cmd_vel`.
 
-The dashboard is intentionally a separate service. It exposes `POST /api/telemetry` so a future SLAM process can publish `[x, y, heading]` without changing the React app. Until then, the service shows wheel dead-reckoning while a command is active.
+The dashboard is intentionally a separate service. A SLAM process can publish `[x, y, heading]` to `POST /api/telemetry` and a map snapshot to `POST /api/map`:
+
+```json
+{
+  "source": "ORB-SLAM3 monocular",
+  "points": [[0.2, 1.1, 0.4], [0.3, 1.2, 0.5]],
+  "boundary": [[-1, -1], [3, -1], [3, 2], [-1, 2]],
+  "path": [[0, 0], [1, 0], [1, 1]]
+}
+```
+
+The map is written to the mounted `data/slam_map.json` volume, so a dashboard restart does not erase the last visualization. The Nano image includes the trained NumPy wheel policy, but its measured velocity is estimated from motor commands because the standard JetBot has no wheel encoders. A real vSLAM process still needs a calibrated camera and must publish poses to these endpoints; until then, the service shows wheel dead-reckoning and an empty map layer.
 
 ## Local development
 

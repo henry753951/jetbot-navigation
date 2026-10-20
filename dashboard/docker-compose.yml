@@ -11,6 +11,7 @@ services:
       - /dev/video0:/dev/video0
     volumes:
       - /tmp/argus_socket:/tmp/argus_socket
+      - ./data:/opt/jetbot-dashboard/data
     environment:
       JETBOT_HOST: ${JETBOT_HOST:-192.168.50.232}
       MOTOR_TIMEOUT: ${MOTOR_TIMEOUT:-1.0}
