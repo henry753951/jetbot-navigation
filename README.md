@@ -55,6 +55,6 @@ See the [architecture](docs/architecture.md), [recorded results](docs/results/RE
 
 ## Working together
 
-Feel free to open an issue with an idea, a question, or something that isn't working. We can use issues to agree on a small task, then review the change in a pull request. The templates will help us keep the useful details in one place.
+Project ideas and next steps are collected in the [roadmap](docs/roadmap.md). If you make a change, open a pull request with a short description and the checks you ran.
 
 Project code is provided under [GPL-3.0](LICENSE). See [third-party notes](THIRD_PARTY.md) for dependencies and simulator assets.

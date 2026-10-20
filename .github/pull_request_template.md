@@ -4,4 +4,4 @@
 
 Include the command, test result, or a screenshot if helpful.
 
-## Related issue
+## Related document or experiment

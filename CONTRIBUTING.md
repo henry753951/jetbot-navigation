@@ -4,13 +4,13 @@ Thanks for helping out! If you're just getting started, try the [2D demo](docs/s
 
 ## Pick something small
 
-Open an issue with what you'd like to try. It can be a project idea, a question, a bug, or a small improvement. Add a short example of how you expect the robot to behave. We can use the issue to agree on the task and who wants to help.
+Add your idea or experiment to the [roadmap](docs/roadmap.md), or include it in the pull request where you start working on it. A short example of how you expect the robot to behave is enough to get started.
 
 ## Make a change
 
 Create a branch such as `feat/frontier-view` or `fix/goal-selection`. If you don't have write access, fork the repository and work there. Keep each pull request focused enough that another person can try it.
 
-Before opening the PR, run:
+Before opening the pull request, run:
 
 ```bash
 .venv/bin/python -m pytest -q

@@ -57,6 +57,6 @@ Results go in `outputs/runs/first-physics-run/`. Use a new run name for each exp
 - Missing map files: run the bundle download step and keep its versioned files together.
 - SLAM connection fails: check `JETBOT_HOST`, Docker host networking, and port 8792.
 - Simulation exits early: check the run's `isaac.log` and the container's asset access.
-- Build fails: include the compiler error and Ubuntu version in an issue.
+- Build fails: include the compiler error and Ubuntu version in the pull request or experiment notes.
 
 The automated tests cover the Python components. The full Isaac run needs the workstation setup above and is checked separately.

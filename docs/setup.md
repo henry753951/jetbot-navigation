@@ -37,4 +37,4 @@ This writes `outputs/wheel_policy.npz` and a JSON report. The policy uses cross-
 
 This regenerates `assets/room.usda` and `assets/oracle_map.npz`. The saved-room demo uses its own matching scene from the release bundle.
 
-For larger runs, choose a new run name and keep results under `outputs/runs/<name>/`. Save a short summary in your issue so someone else can understand what you tried.
+For larger runs, choose a new run name and keep results under `outputs/runs/<name>/`. Save a short summary beside the experiment so someone else can understand what you tried.
