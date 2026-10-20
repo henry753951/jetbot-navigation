@@ -20,6 +20,8 @@ We're still choosing our project topic. This platform gives us something to buil
 Use Python 3.12 on Linux. From the repository folder:
 
 ```bash
+git clone https://github.com/henry753951/jetbot-navigation.git
+cd jetbot-navigation
 python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-lock.txt
 .venv/bin/python -m pip install --no-deps -e .
