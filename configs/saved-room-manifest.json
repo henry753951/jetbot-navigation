@@ -1,0 +1,9 @@
+{
+  "outputs/full_room_target_recovery_atlas.osa": "e542d01f1e4f80928648f29dd002e29707a0c625295e6357e33f2d745b58e607",
+  "outputs/initial_heading_bundle/alignment.json": "2bee5504ad3645d0d6f50f630c0c722b5f4ada02bd9b90f6fa9a3094242f36b6",
+  "outputs/initial_heading_bundle/anchors.json": "b41e63f2e9f5adbc9318585d56a6ca92ee3647ec0426b158c7647af3bc57dcf3",
+  "outputs/initial_heading_bundle/occupancy.npz": "d16b94079f4b334ac6a10c63f63353bce31f947a4e62c62f68918b9d0c4a410d",
+  "assets/room_saved_map.usda": "8f3b7333cb1418df026891de68bf67eadedbe516f76a4e175c75dd7ab2768293",
+  "assets/room_textured.usda": "b6332fb6012f7280b05eacf1dc01e143bfa1b646cefb27f0e7d344c09e884a5d",
+  "assets/floor_texture.png": "84a224ac8bc9aeb7828f4314fd986b9391bdf238d2aaeecde53a55e08b028649"
+}

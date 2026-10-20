@@ -1,0 +1,61 @@
+{
+  "algorithm": "cross-entropy episodic policy search",
+  "environment": "randomized differential motor dynamics (not PhysX)",
+  "iterations": 120,
+  "seed": 13,
+  "heldout_episodes": 256,
+  "heldout_reward": -0.02016491056479474,
+  "zero_policy_reward": -0.4017106706100275,
+  "history": [
+    {
+      "iteration": 0,
+      "reward": -0.269178026573082
+    },
+    {
+      "iteration": 10,
+      "reward": -0.03818743874659215
+    },
+    {
+      "iteration": 20,
+      "reward": -0.037686266987822195
+    },
+    {
+      "iteration": 30,
+      "reward": -0.046564127023363516
+    },
+    {
+      "iteration": 40,
+      "reward": -0.030148772801318252
+    },
+    {
+      "iteration": 50,
+      "reward": -0.03283281373858519
+    },
+    {
+      "iteration": 60,
+      "reward": -0.03702245361357502
+    },
+    {
+      "iteration": 70,
+      "reward": -0.029245976371638244
+    },
+    {
+      "iteration": 80,
+      "reward": -0.02952895232353108
+    },
+    {
+      "iteration": 90,
+      "reward": -0.03589312437694084
+    },
+    {
+      "iteration": 100,
+      "reward": -0.02514716706357189
+    },
+    {
+      "iteration": 110,
+      "reward": -0.02806000624416387
+    }
+  ],
+  "parameter_count": 14,
+  "deployment": "NumPy float64; CPU"
+}

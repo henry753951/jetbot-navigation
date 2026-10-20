@@ -1,0 +1,4 @@
+*.patch -whitespace
+*.png binary
+*.mp4 binary
+*.npz binary

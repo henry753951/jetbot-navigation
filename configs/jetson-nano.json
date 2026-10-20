@@ -1,0 +1,17 @@
+{
+  "hardware_assumption": "original Jetson Nano 4GB, not Orin; unverified",
+  "slam_backend": "ORB-SLAM3",
+  "camera_resolution": [640, 480],
+  "input_hz_target": 15,
+  "orb_features_start": 800,
+  "viewer": false,
+  "preferred_runtime_mode": "localization_only_after_mapping",
+  "controller": "outputs/wheel_policy.npz",
+  "wheel_radius_m_nominal": 0.03,
+  "wheel_separation_m_nominal": 0.1125,
+  "max_speed_mps": 0.15,
+  "max_wheel_rad_s": 14,
+  "pose_timeout_s": 0.25,
+  "stop_on_tracking_loss": true,
+  "requires_measurement": ["camera_intrinsics", "camera_to_base", "wheel_calibration", "metric_scale", "on_device_p95_latency", "motor_feedback", "obstacle_sensor"]
+}

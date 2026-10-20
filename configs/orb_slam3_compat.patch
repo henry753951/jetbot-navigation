@@ -1,0 +1,245 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 016e743..ec24253 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -388,3 +388,7 @@ if(realsense2_FOUND)
+             Examples_old/Stereo-Inertial/stereo_inertial_realsense_D435i.cc)
+     target_link_libraries(stereo_inertial_realsense_D435i_old ${PROJECT_NAME})
+ endif()
++
++add_executable(jetbot_slam ../../scripts/slam_sequence.cc)
++target_link_libraries(jetbot_slam ${PROJECT_NAME})
++set_target_properties(jetbot_slam PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../../outputs/bin)
+diff --git a/include/LoopClosing.h b/include/LoopClosing.h
+index c9ccb26..7b6bfe0 100644
+--- a/include/LoopClosing.h
++++ b/include/LoopClosing.h
+@@ -223,7 +223,7 @@ protected:
+     bool mbFixScale;
+ 
+ 
+-    bool mnFullBAIdx;
++    int mnFullBAIdx;
+ 
+ 
+ 
+diff --git a/include/System.h b/include/System.h
+index 872c86e..98a92ed 100644
+--- a/include/System.h
++++ b/include/System.h
+@@ -152,6 +152,10 @@ public:
+     // See format details at: http://vision.in.tum.de/data/datasets/rgbd-dataset
+     void SaveKeyFrameTrajectoryTUM(const string &filename);
+ 
++    // Export stable keyframe/map IDs before tracking starts or after Shutdown().
++    void SaveKeyFrameGraphCSV(const string &filename);
++    KeyFrame* GetTrackingReferenceKeyFrame();
++
+     void SaveTrajectoryEuRoC(const string &filename);
+     void SaveKeyFrameTrajectoryEuRoC(const string &filename);
+ 
+diff --git a/src/Map.cc b/src/Map.cc
+index f1f8cd0..1cdffa9 100644
+--- a/src/Map.cc
++++ b/src/Map.cc
+@@ -359,7 +359,9 @@ void Map::SetLastMapChange(int currentChangeId)
+ void Map::PreSave(std::set<GeometricCamera*> &spCams)
+ {
+     int nMPWithoutObs = 0;
+-    for(MapPoint* pMPi : mspMapPoints)
++    // EraseObservation may erase this point from mspMapPoints; iterate a snapshot.
++    const std::vector<MapPoint*> pointsToCheck(mspMapPoints.begin(), mspMapPoints.end());
++    for(MapPoint* pMPi : pointsToCheck)
+     {
+         if(!pMPi || pMPi->isBad())
+             continue;
+@@ -390,7 +392,8 @@ void Map::PreSave(std::set<GeometricCamera*> &spCams)
+ 
+     // Backup of MapPoints
+     mvpBackupMapPoints.clear();
+-    for(MapPoint* pMPi : mspMapPoints)
++    const std::vector<MapPoint*> pointsToSave(mspMapPoints.begin(), mspMapPoints.end());
++    for(MapPoint* pMPi : pointsToSave)
+     {
+         if(!pMPi || pMPi->isBad())
+             continue;
+diff --git a/src/MapPoint.cc b/src/MapPoint.cc
+index 1cf802c..bef9d74 100644
+--- a/src/MapPoint.cc
++++ b/src/MapPoint.cc
+@@ -188,7 +188,7 @@ void MapPoint::EraseObservation(KeyFrame* pKF)
+             mObservations.erase(pKF);
+ 
+             if(mpRefKF==pKF)
+-                mpRefKF=mObservations.begin()->first;
++                mpRefKF=mObservations.empty() ? nullptr : mObservations.begin()->first;
+ 
+             // If only 2 observations or less, discard point
+             if(nObs<=2)
+@@ -577,8 +577,9 @@ void MapPoint::PreSave(set<KeyFrame*>& spKF,set<MapPoint*>& spMP)
+ 
+     mBackupObservationsId1.clear();
+     mBackupObservationsId2.clear();
++    const auto observationsToSave = mObservations;
+     // Save the id and position in each KF who view it
+-    for(std::map<KeyFrame*,std::tuple<int,int> >::const_iterator it = mObservations.begin(), end = mObservations.end(); it != end; ++it)
++    for(std::map<KeyFrame*,std::tuple<int,int> >::const_iterator it = observationsToSave.begin(), end = observationsToSave.end(); it != end; ++it)
+     {
+         KeyFrame* pKFi = it->first;
+         if(spKF.find(pKFi) != spKF.end())
+diff --git a/src/System.cc b/src/System.cc
+index 60d9c51..f0bf7f2 100644
+--- a/src/System.cc
++++ b/src/System.cc
+@@ -281,6 +281,19 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight,
+                 usleep(1000);
+             }
+ 
++            // Loaded Atlas localization must select a persisted map. The default
++            // constructor creates an empty map intended for mapping/merging.
++            if(!mStrLoadAtlasFromFile.empty() && mpTracker->mState == Tracking::NO_IMAGES_YET)
++            {
++                Map* best = nullptr;
++                for(Map* map : mpAtlas->GetAllMaps())
++                    if(!map->IsBad() && (!best || map->KeyFramesInMap() > best->KeyFramesInMap())) best = map;
++                if(best && best->KeyFramesInMap() > 0)
++                {
++                    mpAtlas->ChangeMap(best);
++                    mpTracker->mState = Tracking::LOST;
++                }
++            }
+             mpTracker->InformOnlyTracking(true);
+             mbActivateLocalizationMode = false;
+         }
+@@ -356,6 +369,19 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
+                 usleep(1000);
+             }
+ 
++            // Loaded Atlas localization must select a persisted map. The default
++            // constructor creates an empty map intended for mapping/merging.
++            if(!mStrLoadAtlasFromFile.empty() && mpTracker->mState == Tracking::NO_IMAGES_YET)
++            {
++                Map* best = nullptr;
++                for(Map* map : mpAtlas->GetAllMaps())
++                    if(!map->IsBad() && (!best || map->KeyFramesInMap() > best->KeyFramesInMap())) best = map;
++                if(best && best->KeyFramesInMap() > 0)
++                {
++                    mpAtlas->ChangeMap(best);
++                    mpTracker->mState = Tracking::LOST;
++                }
++            }
+             mpTracker->InformOnlyTracking(true);
+             mbActivateLocalizationMode = false;
+         }
+@@ -431,6 +457,19 @@ Sophus::SE3f System::TrackMonocular(const cv::Mat &im, const double &timestamp,
+                 usleep(1000);
+             }
+ 
++            // Loaded Atlas localization must select a persisted map. The default
++            // constructor creates an empty map intended for mapping/merging.
++            if(!mStrLoadAtlasFromFile.empty() && mpTracker->mState == Tracking::NO_IMAGES_YET)
++            {
++                Map* best = nullptr;
++                for(Map* map : mpAtlas->GetAllMaps())
++                    if(!map->IsBad() && (!best || map->KeyFramesInMap() > best->KeyFramesInMap())) best = map;
++                if(best && best->KeyFramesInMap() > 0)
++                {
++                    mpAtlas->ChangeMap(best);
++                    mpTracker->mState = Tracking::LOST;
++                }
++            }
+             mpTracker->InformOnlyTracking(true);
+             mbActivateLocalizationMode = false;
+         }
+@@ -523,6 +562,9 @@ void System::Shutdown()
+ 
+     mpLocalMapper->RequestFinish();
+     mpLoopCloser->RequestFinish();
++    // Snapshot only after background writers stop (upstream wait was commented out).
++    while(!mpLocalMapper->isFinished() || !mpLoopCloser->isFinished() || mpLoopCloser->isRunningGBA())
++        usleep(5000);
+     /*if(mpViewer)
+     {
+         mpViewer->RequestFinish();
+@@ -626,6 +668,34 @@ void System::SaveTrajectoryTUM(const string &filename)
+     // cout << endl << "trajectory saved!" << endl;
+ }
+ 
++KeyFrame* System::GetTrackingReferenceKeyFrame()
++{
++    return mpTracker->mCurrentFrame.mpReferenceKF;
++}
++
++void System::SaveKeyFrameGraphCSV(const string &filename)
++{
++    ofstream output(filename.c_str());
++    output << "map_id,keyframe_id,timestamp,tx,ty,tz,qx,qy,qz,qw\n";
++    for(Map* map : mpAtlas->GetAllMaps())
++    {
++        if(!map || map->IsBad()) continue;
++        vector<KeyFrame*> keyframes = map->GetAllKeyFrames();
++        sort(keyframes.begin(), keyframes.end(), KeyFrame::lId);
++        for(KeyFrame* keyframe : keyframes)
++        {
++            if(!keyframe || keyframe->isBad()) continue;
++            Sophus::SE3f pose = keyframe->GetPoseInverse();
++            Eigen::Vector3f position = pose.translation();
++            Eigen::Quaternionf orientation = pose.unit_quaternion();
++            output << setprecision(10) << map->GetId() << ',' << keyframe->mnId << ','
++                   << keyframe->mTimeStamp << ',' << position(0) << ',' << position(1) << ','
++                   << position(2) << ',' << orientation.x() << ',' << orientation.y() << ','
++                   << orientation.z() << ',' << orientation.w() << '\n';
++        }
++    }
++}
++
+ void System::SaveKeyFrameTrajectoryTUM(const string &filename)
+ {
+     cout << endl << "Saving keyframe trajectory to " << filename << " ..." << endl;
+diff --git a/src/Tracking.cc b/src/Tracking.cc
+index 5191451..e978952 100644
+--- a/src/Tracking.cc
++++ b/src/Tracking.cc
+@@ -48,6 +48,9 @@ Tracking::Tracking(System *pSys, ORBVocabulary* pVoc, FrameDrawer *pFrameDrawer,
+     mpFrameDrawer(pFrameDrawer), mpMapDrawer(pMapDrawer), mpAtlas(pAtlas), mnLastRelocFrameId(0), time_recently_lost(5.0),
+     mnInitialFrameId(0), mbCreatedMap(false), mnFirstFrameId(0), mpCamera2(nullptr), mpLastKeyFrame(static_cast<KeyFrame*>(NULL))
+ {
++    // Loaded-Atlas relocalization skips Stereo/MonocularInitialization(), which
++    // normally assigns this counter. Continuation mapping must not read it uninitialized.
++    mnLastKeyFrameId = 0;
+     // Load camera parameters from settings file
+     if(settings){
+         newParameterLoader(settings);
+@@ -1815,7 +1818,7 @@ void Tracking::Track()
+         cout << "ERROR: There is not an active map in the atlas" << endl;
+     }
+ 
+-    if(mState!=NO_IMAGES_YET)
++    if(mState!=NO_IMAGES_YET && mLastFrame.isSet())
+     {
+         if(mLastFrame.mTimeStamp>mCurrentFrame.mTimeStamp)
+         {
+@@ -2035,8 +2038,8 @@ void Tracking::Track()
+         }
+         else
+         {
+-            // Localization Mode: Local Mapping is deactivated (TODO Not available in inertial mode)
+-            if(mState==LOST)
++            // Localization Mode: also retry retrieval after transient visual loss.
++            if(mState==LOST || mState==RECENTLY_LOST)
+             {
+                 if(mSensor == System::IMU_MONOCULAR || mSensor == System::IMU_STEREO || mSensor == System::IMU_RGBD)
+                     Verbose::PrintMess("IMU. State LOST", Verbose::VERBOSITY_NORMAL);
+@@ -2267,6 +2270,12 @@ void Tracking::Track()
+             }
+         }
+ 
++        // A localization-only session must retain its loaded map on failure.
++        if(mbOnlyTracking && (mState==LOST || mState==RECENTLY_LOST))
++        {
++            mLastFrame = Frame(mCurrentFrame);
++            return;
++        }
+         // Reset if the camera get lost soon after initialization
+         if(mState==LOST)
+         {

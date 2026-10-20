@@ -1,0 +1,31 @@
+{
+  "status": "validated_on_three_static_simulation_routes",
+  "routes": [
+    {
+      "run": "outputs/runs/initial_heading_reload",
+      "goal_error_m": 0.13589348531602133,
+      "fused_xy_rmse_m": 0.10737830852469957,
+      "passed": true
+    },
+    {
+      "run": "outputs/runs/initial_heading_original",
+      "goal_error_m": 0.06095480998290925,
+      "fused_xy_rmse_m": 0.07729406226462635,
+      "passed": true
+    },
+    {
+      "run": "outputs/runs/initial_heading_east",
+      "goal_error_m": 0.08642742240823037,
+      "fused_xy_rmse_m": 0.09730421196522707,
+      "passed": true
+    }
+  ],
+  "scope": "New images in three independent Isaac sessions; fixed Atlas, auxiliary depth obstacle grid, wheel odometry and RL control",
+  "limitations": [
+    "Not arbitrary-view relocalization validation",
+    "Not pure RGB obstacle construction",
+    "Not complete exploration",
+    "Not Jetson Nano hardware validation"
+  ],
+  "atlas_sha256": "e542d01f1e4f80928648f29dd002e29707a0c625295e6357e33f2d745b58e607"
+}

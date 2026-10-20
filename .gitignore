@@ -1,0 +1,22 @@
+# Local environments and generated experiment data
+.venv/
+.depth-venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
+build/
+dist/
+outputs/
+third_party/
+.env
+.env.*
+!.env.example
+*.log
+*.osa
+*.zip
+*.tar.gz
+# Saved-room assets arrive through the versioned release bundle
+assets/room_textured.usda
+assets/room_saved_map.usda
+assets/floor_texture.png
