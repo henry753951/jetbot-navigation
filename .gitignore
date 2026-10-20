@@ -16,6 +16,7 @@ third_party/
 *.osa
 *.zip
 *.tar.gz
+node_modules/
 # Saved-room assets arrive through the versioned release bundle
 assets/room_textured.usda
 assets/room_saved_map.usda

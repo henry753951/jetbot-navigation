@@ -12,9 +12,9 @@ slam_pid=$!
 trap 'kill "$slam_pid" 2>/dev/null || true; wait "$slam_pid" 2>/dev/null || true' EXIT
 sleep 1
 kill -0 "$slam_pid"
-echo "Saved room console: http://${JETBOT_HOST:-192.168.50.78}:8791"
+echo "Saved room console: http://${JETBOT_HOST:-192.168.50.232}:8791"
 bash scripts/run_isaac.sh --run-name saved_room_console \
-  --slam-url "http://${JETBOT_HOST:-192.168.50.78}:8792" \
+  --slam-url "http://${JETBOT_HOST:-192.168.50.232}:8792" \
   --scene assets/room_saved_map.usda --steps 120000 \
   --start 7.8 4.7 2.774 --goal 6 5.5 --rl --slam --serve \
   --fuse-odometry --recover-tracking --depth-map \

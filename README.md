@@ -13,6 +13,7 @@ We're still choosing our project topic. This platform gives us something to buil
 - **Want to see what we've been working on?** Read the [introduction and watch the demos](docs/introduction.md), or open the [Notion page](https://www.notion.so/3fe8ca099c5481afb10ed85bae7115e7).
 - **Want to try the code?** Follow the [setup guide](docs/setup.md). The 2D demo works without Isaac Sim or a GPU.
 - **Want to run the Isaac demo?** Follow the [saved-room guide](docs/isaac-sim.md).
+- **Want to develop against the real JetBot?** Open the [React + Three.js dashboard guide](dashboard/README.md).
 - **Want to help or suggest a topic?** Take a look at [how we work together](CONTRIBUTING.md) and the [roadmap](docs/roadmap.md).
 
 ## Try the 2D demo
@@ -26,11 +27,11 @@ python3.12 -m venv .venv
 .venv/bin/python -m pip install -r requirements-lock.txt
 .venv/bin/python -m pip install --no-deps -e .
 .venv/bin/python scripts/prepare_demo.py
-export JETBOT_HOST=192.168.50.78  # Change this to your computer's LAN address.
+export JETBOT_HOST=192.168.50.232  # Change this to your computer's LAN address.
 bash scripts/start_console.sh
 ```
 
-Open `http://192.168.50.78:8790`, using the same address you set above. Click a free area to choose a goal, or try exploration. This is the lightweight 2D practice environment; the Isaac version has its own guide above.
+Open `http://192.168.50.232:8790`, using the same address you set above. Click a free area to choose a goal, or try exploration. This is the lightweight 2D practice environment; the Isaac version has its own guide above.
 
 ## Where things live
 

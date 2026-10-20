@@ -32,13 +32,13 @@ The release bundle contains the Atlas, metric anchors, obstacle grid, and matchi
 ## Start navigation
 
 ```bash
-export JETBOT_HOST=192.168.50.78  # Your workstation's LAN address.
+export JETBOT_HOST=192.168.50.232  # Your workstation's LAN address.
 export ISAAC_CONTAINER=isaac-sim-headless
 .venv/bin/python scripts/prepare_demo.py
 bash scripts/run_saved_room_demo.sh
 ```
 
-Open `http://192.168.50.78:8791`, replacing the address with your own. The robot starts at `(7.8, 4.7)` and the example goal is `(6, 5.5)`. Choose a reachable free cell to try another goal. Port 8792 carries SLAM requests between Isaac and the host service; the launcher passes your LAN address to the simulator.
+Open `http://192.168.50.232:8791`, replacing the address with your own. The robot starts at `(7.8, 4.7)` and the example goal is `(6, 5.5)`. Choose a reachable free cell to try another goal. Port 8792 carries SLAM requests between Isaac and the host service; the launcher passes your LAN address to the simulator.
 
 Run one project simulation at a time. Use the stop control before ending the launcher. The SLAM service may take time to finish its background work when shutting down.
 

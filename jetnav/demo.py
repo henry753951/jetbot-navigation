@@ -87,6 +87,6 @@ def main():
         while True:
             demo.tick(); time.sleep(.05)
     threading.Thread(target=run,daemon=True).start()
-    print(f"JetBot console: http://{os.environ.get('JETBOT_HOST', '192.168.50.78')}:8790",flush=True)
+    print(f"JetBot console: http://{os.environ.get('JETBOT_HOST', '192.168.50.232')}:8790",flush=True)
     ThreadingHTTPServer(('0.0.0.0',8790),Handler).serve_forever()
 if __name__=='__main__': main()

@@ -1,0 +1,16 @@
+version: "3.7"
+services:
+  dashboard:
+    build: .
+    image: jetbot-navigation-dashboard:latest
+    container_name: jetbot_navigation_dashboard
+    network_mode: host
+    privileged: true
+    restart: unless-stopped
+    devices:
+      - /dev/video0:/dev/video0
+    volumes:
+      - /tmp/argus_socket:/tmp/argus_socket
+    environment:
+      JETBOT_HOST: ${JETBOT_HOST:-192.168.50.232}
+      MOTOR_TIMEOUT: ${MOTOR_TIMEOUT:-1.0}
